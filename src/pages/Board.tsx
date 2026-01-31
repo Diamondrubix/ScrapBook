@@ -7,6 +7,7 @@ import { usePresence } from "../hooks/usePresence";
 import { useItemLocks } from "../hooks/useItemLocks";
 import { BoardCanvas } from "../components/BoardCanvas";
 import { Toolbar } from "../components/Toolbar";
+import type { Point, ShapeKind, ToolId } from "../canvas/types";
 
 type BoardPageProps = {
   board: Board;
@@ -21,7 +22,7 @@ function makeSlug() {
 export function BoardPage({ board, user, onBack }: BoardPageProps) {
   const [boardState, setBoardState] = useState(board);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [tool, setTool] = useState<"select" | "rect" | "circle" | "arrow" | "pen">("select");
+  const [tool, setTool] = useState<ToolId>("select");
   const [color, setColor] = useState("#111111");
   const [uiError, setUiError] = useState<string | null>(null);
   const { items, createItem, updateItem, deleteItem, error } = useRealtimeBoard(
@@ -129,7 +130,7 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
   };
 
   const handleCreateShape = async (args: {
-    kind: "rect" | "circle" | "arrow";
+    kind: ShapeKind;
     x: number;
     y: number;
     width: number;
@@ -148,7 +149,7 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
   };
 
   const handleCreateDraw = async (args: {
-    points: { x: number; y: number }[];
+    points: Point[];
     x: number;
     y: number;
     width: number;

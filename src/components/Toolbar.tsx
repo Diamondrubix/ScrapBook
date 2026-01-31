@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import type { ToolId } from "../canvas/types";
 
 type ToolbarProps = {
   onAddText: () => void;
@@ -6,8 +7,8 @@ type ToolbarProps = {
   onAddImage: (file: File) => void;
   onAddVideoEmbed: (url: string) => void;
   onAddVideoUpload: (file: File) => void;
-  activeTool: "select" | "rect" | "circle" | "arrow" | "pen";
-  onSelectTool: (tool: "select" | "rect" | "circle" | "arrow" | "pen") => void;
+  activeTool: ToolId;
+  onSelectTool: (tool: ToolId) => void;
   color: string;
   onColorChange: (color: string) => void;
 };
