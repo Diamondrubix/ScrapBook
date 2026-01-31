@@ -47,6 +47,27 @@ Enable replication for these tables:
 - **Site URL**: `http://localhost:5173`
 - **Redirect URLs**: `http://localhost:5173/**`
 
+## GitHub Pages deployment
+This repo includes a GitHub Actions workflow that builds on every push to `master` and deploys to GitHub Pages.
+
+### 1) Add secrets
+Repo Settings → Secrets and variables → Actions → New repository secret:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+### 2) Enable Pages
+Repo Settings → Pages:
+- Source: **GitHub Actions**
+
+### 3) Update Supabase Auth URLs for prod
+When your site is live, set:
+- **Site URL**: `https://<username>.github.io/<repo-name>/`
+- **Redirect URLs**: `https://<username>.github.io/<repo-name>/**`
+
+Notes:
+- This is a static site deploy; there is no “server restart.”
+- The workflow sets `BASE_PATH` to `/<repo-name>/` to match GitHub Pages project sites.
+
 ## Run the app
 ```
 npm run dev
