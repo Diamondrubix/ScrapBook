@@ -1,12 +1,14 @@
 import type { Item } from "../../lib/types";
-import type { Point, ShapeKind, ViewState } from "../types";
+import type { Point, ShapeKind, ToolId, ViewState } from "../types";
 
 export type ToolContext = {
   getView: () => ViewState;
   setView: (view: ViewState) => void;
   toWorld: (clientX: number, clientY: number) => Point;
   invalidate: () => void;
-  selectItem: (itemId: string | null) => void;
+  getItems: () => Item[];
+  getSelectedIds: () => string[];
+  setSelectedIds: (ids: string[]) => void;
   isLockedByOther: (itemId: string) => boolean;
   updateItem: (itemId: string, patch: Partial<Item>) => void;
   updateItemThrottled: (itemId: string, patch: Partial<Item>) => void;
@@ -26,4 +28,5 @@ export type ToolContext = {
     height: number;
   }) => void;
   drawColor: string;
+  requestToolChange: (tool: ToolId) => void;
 };

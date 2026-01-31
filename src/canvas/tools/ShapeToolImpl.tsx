@@ -77,6 +77,7 @@ export class ShapeTool extends BaseTool {
 
     this.draft = null;
     this.ctx.invalidate();
+    this.ctx.requestToolChange("select");
   }
 
   renderOverlay(): ReactNode {

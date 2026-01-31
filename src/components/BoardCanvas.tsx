@@ -15,14 +15,15 @@ import type { ToolContext } from "../canvas/tools/ToolContext";
 type BoardCanvasProps = {
   items: Item[];
   presence: PresenceUser[];
-  selectedId: string | null;
-  onSelect: (itemId: string | null) => void;
+  selectedIds: string[];
+  onSelectIds: (itemIds: string[]) => void;
   onUpdateItem: (itemId: string, patch: Partial<Item>) => Promise<void> | void;
   onDeleteItem: (itemId: string) => Promise<void> | void;
   isLockedByOther: (itemId: string) => boolean;
   onCursorMove: (pos: { x: number; y: number }) => void;
   tool: ToolId;
   drawColor: string;
+  onToolChange: (tool: ToolId) => void;
   onCreateShape: (args: {
     kind: "rect" | "circle" | "arrow";
     x: number;
@@ -43,14 +44,15 @@ type BoardCanvasProps = {
 export function BoardCanvas({
   items,
   presence,
-  selectedId,
-  onSelect,
+  selectedIds,
+  onSelectIds,
   onUpdateItem,
   onDeleteItem,
   isLockedByOther,
   onCursorMove,
   tool,
   drawColor,
+  onToolChange,
   onCreateShape,
   onCreateDraw,
 }: BoardCanvasProps) {
@@ -95,13 +97,16 @@ export function BoardCanvas({
     setView,
     toWorld,
     invalidate: () => forceRender(),
-    selectItem: onSelect,
+    getItems: () => items,
+    getSelectedIds: () => selectedIds,
+    setSelectedIds: onSelectIds,
     isLockedByOther,
     updateItem: onUpdateItem,
     updateItemThrottled,
     createShape: onCreateShape,
     createDraw: onCreateDraw,
     drawColor,
+    requestToolChange: onToolChange,
   };
 
   const activeTool = toolsRef.current[tool];
@@ -126,11 +131,10 @@ export function BoardCanvas({
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return;
     const target = event.target as HTMLElement | null;
     const hitItem = target?.closest("[data-item-id]");
     // Selection uses item handlers; other tools draw even over existing items.
-    if (tool === "select" && hitItem) return;
+    if (tool === "select" && hitItem && event.button === 0) return;
     activeTool.onCanvasPointerDown(event);
   };
 
@@ -143,6 +147,30 @@ export function BoardCanvas({
   const handlePointerUp = () => {
     activeTool.onPointerUp();
   };
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (selectedIds.length === 0) return;
+      if (event.key !== "Delete" && event.key !== "Backspace") return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      selectedIds.forEach((itemId) => {
+        void onDeleteItem(itemId);
+      });
+      onSelectIds([]);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedIds, onDeleteItem, onSelectIds]);
 
   const handleItemPointerDown = (
     event: PointerEvent<HTMLDivElement>,
@@ -161,6 +189,7 @@ export function BoardCanvas({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
+      onContextMenu={(event) => event.preventDefault()}
     >
       <div
         className="canvas-layer"
@@ -170,7 +199,8 @@ export function BoardCanvas({
           <CanvasItem
             key={item.id}
             item={item}
-            selected={selectedId === item.id}
+            selected={selectedIds.includes(item.id)}
+            showOutline={selectedIds.length <= 1}
             locked={isLockedByOther(item.id)}
             tool={tool}
             onPointerDown={handleItemPointerDown}

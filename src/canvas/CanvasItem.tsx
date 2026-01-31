@@ -6,6 +6,7 @@ import { renderDraw, renderShape } from "./renderers";
 type CanvasItemProps = {
   item: Item;
   selected: boolean;
+  showOutline: boolean;
   locked: boolean;
   tool: ToolId;
   onPointerDown: (event: PointerEvent<HTMLDivElement>, item: Item, handle?: DragHandle) => void;
@@ -16,6 +17,7 @@ type CanvasItemProps = {
 export function CanvasItem({
   item,
   selected,
+  showOutline,
   locked,
   tool,
   onPointerDown,
@@ -24,14 +26,16 @@ export function CanvasItem({
 }: CanvasItemProps) {
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (tool !== "select") return;
-    event.stopPropagation();
+    if (event.button === 0) {
+      event.stopPropagation();
+    }
     const handle = (event.target as HTMLElement).dataset.handle as DragHandle | undefined;
     onPointerDown(event, item, handle);
   };
 
   return (
     <div
-      className={`item ${selected ? "selected" : ""} ${locked ? "locked" : ""}`}
+      className={`item ${selected && showOutline ? "selected" : ""} ${locked ? "locked" : ""}`}
       data-item-id={item.id}
       style={{
         width: item.width,
@@ -43,11 +47,11 @@ export function CanvasItem({
       }}
       onPointerDown={handlePointerDown}
       onDoubleClick={() => {
-        if (selected && !locked) onDelete(item.id);
+        if (selected && showOutline && !locked) onDelete(item.id);
       }}
     >
       <CanvasItemContent item={item} onUpdateItem={onUpdateItem} />
-      {selected && tool === "select" && !locked && (
+      {selected && showOutline && tool === "select" && !locked && (
         <>
           {/* Corner handles for resize */}
           <div className="resize-handle handle-nw" data-handle="nw" />

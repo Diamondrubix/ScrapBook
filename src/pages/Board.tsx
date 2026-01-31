@@ -21,7 +21,7 @@ function makeSlug() {
 
 export function BoardPage({ board, user, onBack }: BoardPageProps) {
   const [boardState, setBoardState] = useState(board);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tool, setTool] = useState<ToolId>("select");
   const [color, setColor] = useState("#111111");
   const [uiError, setUiError] = useState<string | null>(null);
@@ -37,12 +37,21 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
     return { x: 50 + offset, y: 50 + offset };
   };
 
-  const handleSelect = async (itemId: string | null) => {
-    if (selectedId && selectedId !== itemId) {
-      await unlockItem(selectedId);
+  const handleSelectIds = async (nextIds: string[]) => {
+    const prev = new Set(selectedIds);
+    const next = new Set(nextIds);
+
+    const toUnlock = selectedIds.filter((id) => !next.has(id));
+    const toLock = nextIds.filter((id) => !prev.has(id));
+
+    for (const id of toUnlock) {
+      await unlockItem(id);
     }
-    if (itemId) await lockItem(itemId);
-    setSelectedId(itemId);
+    for (const id of toLock) {
+      await lockItem(id);
+    }
+
+    setSelectedIds(nextIds);
   };
 
   const handleAddText = async () => {
@@ -217,20 +226,22 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
       <BoardCanvas
         items={items}
         presence={others}
-        selectedId={selectedId}
-        onSelect={handleSelect}
+        selectedIds={selectedIds}
+        onSelectIds={handleSelectIds}
         onUpdateItem={updateItem}
         onDeleteItem={deleteItem}
         isLockedByOther={isLockedByOther}
         onCursorMove={updateCursor}
         tool={tool}
         drawColor={color}
+        onToolChange={setTool}
         onCreateShape={handleCreateShape}
         onCreateDraw={handleCreateDraw}
       />
 
       <div className="card">
-        <strong>Tips:</strong> Drag to move. Shift-drag to resize. Alt-drag to rotate. Double-click to delete.
+        <strong>Tips:</strong> Drag to move. Use corner handles to resize. Alt-drag to rotate (single item).
+        Left-drag on empty canvas to box-select. Right-drag to pan. Delete/Backspace removes selection.
         Shapes: select Rect/Circle/Arrow then drag on empty canvas to draw. Pen: click-drag to draw.
       </div>
 
