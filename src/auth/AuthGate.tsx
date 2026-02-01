@@ -44,7 +44,7 @@ export function AuthGate({ children }: AuthGateProps) {
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/ScrapBook/`,
       },
     });
     if (authError) {
