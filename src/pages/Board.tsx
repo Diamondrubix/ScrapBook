@@ -207,7 +207,8 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
 
       {boardState.is_public && boardState.public_slug && (
         <div className="card">
-          Public link (viewer-only for now): {window.location.origin}/public/{boardState.public_slug}
+          Public link (viewer-only for now):{" "}
+          {`${window.location.origin}${import.meta.env.BASE_URL}public/${boardState.public_slug}`}
         </div>
       )}
 
