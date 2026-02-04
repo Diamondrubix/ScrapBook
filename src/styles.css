@@ -39,6 +39,19 @@ a {
   padding: 12px;
 }
 
+.public-link {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.public-link__text {
+  flex: 1 1 320px;
+  word-break: break-word;
+}
+
 .button {
   background: #111;
   color: #fff;

@@ -224,9 +224,12 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
       </div>
 
       {publicUrl && (
-        <div className="card row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            Public link (viewer-only for now): {publicUrl}
+        <div className="card public-link">
+          <div className="public-link__text">
+            Public link (viewer-only for now):{" "}
+            <a href={publicUrl} target="_blank" rel="noreferrer">
+              {publicUrl}
+            </a>
           </div>
           <div className="row">
             <button className="button secondary" onClick={copyPublicUrl}>
