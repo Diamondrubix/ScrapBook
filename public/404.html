@@ -8,8 +8,17 @@
       // GitHub Pages SPA fallback: redirect all 404s to index.html
       // while preserving the full path and query string.
       (function () {
-        var base = window.location.pathname.split("/").slice(0, -1).join("/") + "/";
-        var redirect = base + "?p=" + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+        // GitHub Pages project sites live at `/<repo-name>/...`.
+        // Redirect to the project root (so index.html loads), and pass the original
+        // path via a query param for the SPA router to pick up.
+        var segments = window.location.pathname.split("/").filter(Boolean);
+        var base = segments.length > 0 ? "/" + segments[0] + "/" : "/";
+        var redirect =
+          base +
+          "?p=" +
+          encodeURIComponent(
+            window.location.pathname + window.location.search + window.location.hash,
+          );
         window.location.replace(redirect);
       })();
     </script>
