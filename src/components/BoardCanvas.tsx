@@ -18,6 +18,8 @@ type BoardCanvasProps = {
   selectedIds: string[];
   onSelectIds: (itemIds: string[]) => void;
   onUpdateItem: (itemId: string, patch: Partial<Item>) => Promise<void> | void;
+  onUpdateItemLocal: (itemId: string, patch: Partial<Item>) => void;
+  onUpdateItemRemote: (itemId: string, patch: Partial<Item>) => Promise<void> | void;
   onDeleteItem: (itemId: string) => Promise<void> | void;
   isLockedByOther: (itemId: string) => boolean;
   onCursorMove: (pos: { x: number; y: number }) => void;
@@ -39,6 +41,7 @@ type BoardCanvasProps = {
     width: number;
     height: number;
   }) => void;
+  onDraggingChange: (itemIds: string[]) => void;
   readOnly?: boolean;
 };
 
@@ -48,6 +51,8 @@ export function BoardCanvas({
   selectedIds,
   onSelectIds,
   onUpdateItem,
+  onUpdateItemLocal,
+  onUpdateItemRemote,
   onDeleteItem,
   isLockedByOther,
   onCursorMove,
@@ -56,6 +61,7 @@ export function BoardCanvas({
   onToolChange,
   onCreateShape,
   onCreateDraw,
+  onDraggingChange,
   readOnly = false,
 }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -89,14 +95,20 @@ export function BoardCanvas({
     };
   };
 
-  // Throttle writes to reduce DB chatter while dragging.
-  const updateItemThrottled = useMemo(
-    () =>
-      throttle((itemId: string, patch: Partial<Item>) => {
-        void onUpdateItem(itemId, patch);
-      }, 40),
-    [onUpdateItem],
-  );
+  // Throttle writes to reduce DB chatter while dragging (per-item throttles).
+  const updateItemRemoteThrottled = useMemo(() => {
+    const throttles = new Map<string, ReturnType<typeof throttle>>();
+    return (itemId: string, patch: Partial<Item>) => {
+      let throttled = throttles.get(itemId);
+      if (!throttled) {
+        throttled = throttle((nextPatch: Partial<Item>) => {
+          void onUpdateItemRemote(itemId, nextPatch);
+        }, 40);
+        throttles.set(itemId, throttled);
+      }
+      throttled(patch);
+    };
+  }, [onUpdateItemRemote]);
 
   // ToolContext is the contract between the canvas shell and tool classes.
   const context: ToolContext = {
@@ -109,11 +121,14 @@ export function BoardCanvas({
     setSelectedIds: onSelectIds,
     isLockedByOther,
     updateItem: onUpdateItem,
-    updateItemThrottled,
+    updateItemLocal: onUpdateItemLocal,
+    updateItemRemote: onUpdateItemRemote,
+    updateItemRemoteThrottled,
     createShape: onCreateShape,
     createDraw: onCreateDraw,
     drawColor,
     requestToolChange: onToolChange,
+    setDraggingIds: onDraggingChange,
   };
 
   const activeTool = toolsRef.current[tool];

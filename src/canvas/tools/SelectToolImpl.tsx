@@ -105,6 +105,7 @@ export class SelectTool extends BaseTool {
       origins,
       handle,
     };
+    this.ctx.setDraggingIds(selection);
 
     // Alt + drag on a single item rotates around its center.
     if (mode === "rotate" && selection.length === 1) {
@@ -144,10 +145,9 @@ export class SelectTool extends BaseTool {
         const origin = this.drag?.origins.get(itemId);
         if (!origin) return;
         // Apply the delta relative to each item's original position.
-        this.ctx.updateItemThrottled(itemId, {
-          x: origin.x + dx,
-          y: origin.y + dy,
-        });
+        const patch = { x: origin.x + dx, y: origin.y + dy };
+        this.ctx.updateItemLocal(itemId, patch);
+        this.ctx.updateItemRemoteThrottled(itemId, patch);
       });
       return;
     }
@@ -193,12 +193,14 @@ export class SelectTool extends BaseTool {
         if (!origin) return;
         const relX = origin.x - this.drag.originBounds.x;
         const relY = origin.y - this.drag.originBounds.y;
-        this.ctx.updateItemThrottled(itemId, {
+        const patch = {
           x: nextX + relX * scaleX,
           y: nextY + relY * scaleY,
           width: origin.width * scaleX,
           height: origin.height * scaleY,
-        });
+        };
+        this.ctx.updateItemLocal(itemId, patch);
+        this.ctx.updateItemRemoteThrottled(itemId, patch);
       });
       return;
     }
@@ -211,7 +213,9 @@ export class SelectTool extends BaseTool {
       const itemId = this.drag.itemIds[0];
       const origin = this.drag.origins.get(itemId);
       if (!origin) return;
-      this.ctx.updateItemThrottled(itemId, { rotation: origin.rotation + delta });
+      const patch = { rotation: origin.rotation + delta };
+      this.ctx.updateItemLocal(itemId, patch);
+      this.ctx.updateItemRemoteThrottled(itemId, patch);
     }
   }
 
@@ -230,6 +234,22 @@ export class SelectTool extends BaseTool {
       this.selectionBox = null;
       this.ctx.invalidate();
       return;
+    }
+
+    if (this.drag && this.drag.mode !== "pan") {
+      const items = this.ctx.getItems();
+      this.drag.itemIds.forEach((itemId) => {
+        const item = items.find((entry) => entry.id === itemId);
+        if (!item) return;
+        this.ctx.updateItemRemote(itemId, {
+          x: item.x,
+          y: item.y,
+          width: item.width,
+          height: item.height,
+          rotation: item.rotation,
+        });
+      });
+      this.ctx.setDraggingIds([]);
     }
 
     this.drag = null;
@@ -288,6 +308,7 @@ export class SelectTool extends BaseTool {
                 originBounds: bounds,
                 origins,
               };
+              this.ctx.setDraggingIds(selection);
             }}
           >
             <div className="resize-handle handle-nw" data-handle="nw" onPointerDown={(event) => this.startGroupResize(event, "nw", bounds, selectedItems)} />
@@ -331,5 +352,6 @@ export class SelectTool extends BaseTool {
       origins,
       handle,
     };
+    this.ctx.setDraggingIds(selectedItems.map((item) => item.id));
   }
 }

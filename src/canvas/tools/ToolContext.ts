@@ -11,7 +11,9 @@ export type ToolContext = {
   setSelectedIds: (ids: string[]) => void;
   isLockedByOther: (itemId: string) => boolean;
   updateItem: (itemId: string, patch: Partial<Item>) => void;
-  updateItemThrottled: (itemId: string, patch: Partial<Item>) => void;
+  updateItemLocal: (itemId: string, patch: Partial<Item>) => void;
+  updateItemRemote: (itemId: string, patch: Partial<Item>) => void;
+  updateItemRemoteThrottled: (itemId: string, patch: Partial<Item>) => void;
   createShape: (args: {
     kind: ShapeKind;
     x: number;
@@ -29,4 +31,5 @@ export type ToolContext = {
   }) => void;
   drawColor: string;
   requestToolChange: (tool: ToolId) => void;
+  setDraggingIds: (ids: string[]) => void;
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import type { Item, ItemType } from "../lib/types";
 import { makeId } from "../utils/ids";
@@ -13,9 +13,23 @@ type CreateItemArgs = {
   rotation?: number;
 };
 
-export function useRealtimeBoard(boardId: string, userId: string) {
+type RealtimeBoardOptions = {
+  ignoreRealtimeForIds?: string[];
+};
+
+export function useRealtimeBoard(
+  boardId: string,
+  userId: string,
+  options: RealtimeBoardOptions = {},
+) {
   const [items, setItems] = useState<Item[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const ignoreRealtimeRef = useRef<Set<string>>(new Set());
+
+  const ignoreKey = (options.ignoreRealtimeForIds ?? []).join("|");
+  useEffect(() => {
+    ignoreRealtimeRef.current = new Set(options.ignoreRealtimeForIds ?? []);
+  }, [ignoreKey]);
 
   useEffect(() => {
     if (!boardId) return;
@@ -51,6 +65,7 @@ export function useRealtimeBoard(boardId: string, userId: string) {
             }
             if (payload.eventType === "UPDATE") {
               const next = payload.new as Item;
+              if (ignoreRealtimeRef.current.has(next.id)) return prev;
               return prev.map((item) => (item.id === next.id ? next : item));
             }
             if (payload.eventType === "DELETE") {
@@ -94,14 +109,22 @@ export function useRealtimeBoard(boardId: string, userId: string) {
     if (insertError) setError(insertError.message);
   };
 
-  const updateItem = async (itemId: string, patch: Partial<Item>) => {
-    // Optimistically update local state; realtime will reconcile.
+  const updateItemLocal = useCallback((itemId: string, patch: Partial<Item>) => {
     setItems((prev) =>
       prev.map((item) => (item.id === itemId ? { ...item, ...patch } : item)),
     );
+  }, []);
+
+  const updateItemRemote = useCallback(async (itemId: string, patch: Partial<Item>) => {
     const { error: updateError } = await supabase.from("items").update(patch).eq("id", itemId);
     if (updateError) setError(updateError.message);
-  };
+  }, []);
+
+  const updateItem = useCallback(async (itemId: string, patch: Partial<Item>) => {
+    // Optimistically update local state; realtime will reconcile.
+    updateItemLocal(itemId, patch);
+    await updateItemRemote(itemId, patch);
+  }, [updateItemLocal, updateItemRemote]);
 
   const deleteItem = async (itemId: string) => {
     setItems((prev) => prev.filter((item) => item.id !== itemId));
@@ -118,6 +141,8 @@ export function useRealtimeBoard(boardId: string, userId: string) {
     items: orderedItems,
     createItem,
     updateItem,
+    updateItemLocal,
+    updateItemRemote,
     deleteItem,
     error,
   };

@@ -23,14 +23,20 @@ function makeSlug() {
 export function BoardPage({ board, user, onBack }: BoardPageProps) {
   const [boardState, setBoardState] = useState(board);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [draggingIds, setDraggingIds] = useState<string[]>([]);
   const [tool, setTool] = useState<ToolId>("select");
   const [color, setColor] = useState("#111111");
   const [uiError, setUiError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
-  const { items, createItem, updateItem, deleteItem, error } = useRealtimeBoard(
-    board.id,
-    user.id,
-  );
+  const {
+    items,
+    createItem,
+    updateItem,
+    updateItemLocal,
+    updateItemRemote,
+    deleteItem,
+    error,
+  } = useRealtimeBoard(board.id, user.id, { ignoreRealtimeForIds: draggingIds });
   const { others, updateCursor } = usePresence(board.id, user);
   const { lockItem, unlockItem, isLockedByOther } = useItemLocks(board.id, user.id);
 
@@ -262,6 +268,8 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
         selectedIds={selectedIds}
         onSelectIds={handleSelectIds}
         onUpdateItem={updateItem}
+        onUpdateItemLocal={updateItemLocal}
+        onUpdateItemRemote={updateItemRemote}
         onDeleteItem={deleteItem}
         isLockedByOther={isLockedByOther}
         onCursorMove={updateCursor}
@@ -270,6 +278,7 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
         onToolChange={setTool}
         onCreateShape={handleCreateShape}
         onCreateDraw={handleCreateDraw}
+        onDraggingChange={setDraggingIds}
       />
 
       <div className="card">
