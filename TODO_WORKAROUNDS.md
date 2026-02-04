@@ -10,13 +10,12 @@ This document lists intentional shortcuts or hacks currently in the codebase tha
 
 ## 2) Hard-coded magic-link redirect
 - File: `src/auth/AuthGate.tsx`
-- What it does: Forces `emailRedirectTo` to `${window.location.origin}/ScrapBook/`.
-- Why it's a workaround: It's environment-specific and will break if the base path changes (custom domain, different repo name).
-- Proper fix: Use an env var (e.g., `VITE_PUBLIC_URL`) and fall back to `import.meta.env.BASE_URL`.
+- What it does: Uses `window.location.origin + import.meta.env.BASE_URL` to build the redirect URL.
+- Why it's a workaround: This assumes `BASE_URL` is accurate for every deployment and ties auth redirects to the current runtime origin.
+- Proper fix: Use an explicit env var (e.g., `VITE_PUBLIC_URL`) per environment, and validate against Supabase Redirect URLs.
 
 ## 3) Public route parsing relies on `?p=` shim
 - File: `src/App.tsx`
 - What it does: Reads `?p=` to recover the original path after the 404 redirect.
 - Why it's a workaround: This only exists to support GitHub Pages SPA routing.
 - Proper fix: Same as #1 (host with real SPA routing, or add a server that rewrites all routes to `index.html`).
-
