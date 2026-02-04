@@ -25,6 +25,7 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
   const [tool, setTool] = useState<ToolId>("select");
   const [color, setColor] = useState("#111111");
   const [uiError, setUiError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const { items, createItem, updateItem, deleteItem, error } = useRealtimeBoard(
     board.id,
     user.id,
@@ -189,6 +190,23 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
     setBoardState(data as Board);
   };
 
+  const publicUrl =
+    boardState.is_public && boardState.public_slug
+      ? `${window.location.origin}${import.meta.env.BASE_URL}public/${boardState.public_slug}`
+      : null;
+
+  const copyPublicUrl = async () => {
+    if (!publicUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopyStatus("Copied!");
+      setTimeout(() => setCopyStatus(null), 1500);
+    } catch {
+      setCopyStatus("Copy failed");
+      setTimeout(() => setCopyStatus(null), 1500);
+    }
+  };
+
   return (
     <div className="page stack">
       <div className="row" style={{ justifyContent: "space-between" }}>
@@ -205,10 +223,17 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
         </div>
       </div>
 
-      {boardState.is_public && boardState.public_slug && (
-        <div className="card">
-          Public link (viewer-only for now):{" "}
-          {`${window.location.origin}${import.meta.env.BASE_URL}public/${boardState.public_slug}`}
+      {publicUrl && (
+        <div className="card row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            Public link (viewer-only for now): {publicUrl}
+          </div>
+          <div className="row">
+            <button className="button secondary" onClick={copyPublicUrl}>
+              Copy URL
+            </button>
+            {copyStatus && <span>{copyStatus}</span>}
+          </div>
         </div>
       )}
 
