@@ -80,7 +80,7 @@ export function PublicBoardPage({ slug, onBack }: PublicBoardPageProps) {
         onSelectIds={() => {}}
         onUpdateItem={() => {}}
         onDeleteItem={() => {}}
-        isLockedByOther={() => true}
+        isLockedByOther={() => false}
         onCursorMove={() => {}}
         tool="select"
         drawColor="#111111"

@@ -18,6 +18,7 @@ export function useRealtimeBoard(boardId: string, userId: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!boardId) return;
     let mounted = true;
     const load = async () => {
       const { data, error: loadError } = await supabase
