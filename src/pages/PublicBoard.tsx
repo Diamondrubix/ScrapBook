@@ -38,6 +38,7 @@ export function PublicBoardPage({ slug, onBack }: PublicBoardPageProps) {
   }, [slug]);
 
   const boardId = board?.id ?? "";
+  // Public view is read-only but still subscribes to realtime updates.
   const { items } = useRealtimeBoard(boardId, "public-viewer");
 
   if (error) {

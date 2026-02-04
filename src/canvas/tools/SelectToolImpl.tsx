@@ -6,6 +6,14 @@ import type { Bounds } from "../selection";
 import type { DragHandle, Point, ViewState } from "../types";
 import { BaseTool } from "./BaseTool";
 
+type ItemOrigin = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+};
+
 type DragState =
   | {
       mode: "pan";
@@ -17,7 +25,7 @@ type DragState =
       itemIds: string[];
       startWorld: Point;
       originBounds: Bounds;
-      origins: Map<string, { x: number; y: number; width: number; height: number; rotation: number }>;
+      origins: Map<string, ItemOrigin>;
       handle?: DragHandle;
       startAngle?: number;
     };
@@ -40,6 +48,7 @@ export class SelectTool extends BaseTool {
   onCanvasPointerDown(event: PointerEvent<HTMLDivElement>) {
     const world = this.ctx.toWorld(event.clientX, event.clientY);
     if (event.button === 2) {
+      // Right-click drag pans the canvas.
       this.drag = {
         mode: "pan",
         startClient: { x: event.clientX, y: event.clientY },
@@ -49,6 +58,7 @@ export class SelectTool extends BaseTool {
     }
 
     if (event.button !== 0) return;
+    // Left-drag on empty canvas begins a selection box.
     this.selectionBox = { start: world, current: world };
     this.ctx.invalidate();
   }
@@ -74,7 +84,7 @@ export class SelectTool extends BaseTool {
           ? "rotate"
           : "move";
 
-    const origins = new Map<string, { x: number; y: number; width: number; height: number; rotation: number }>();
+    const origins = new Map<string, ItemOrigin>();
     this.ctx.getItems().forEach((candidate) => {
       if (selection.includes(candidate.id)) {
         origins.set(candidate.id, {
@@ -96,6 +106,7 @@ export class SelectTool extends BaseTool {
       handle,
     };
 
+    // Alt + drag on a single item rotates around its center.
     if (mode === "rotate" && selection.length === 1) {
       const centerX = item.x + item.width / 2;
       const centerY = item.y + item.height / 2;
@@ -132,6 +143,7 @@ export class SelectTool extends BaseTool {
       this.drag.itemIds.forEach((itemId) => {
         const origin = this.drag?.origins.get(itemId);
         if (!origin) return;
+        // Apply the delta relative to each item's original position.
         this.ctx.updateItemThrottled(itemId, {
           x: origin.x + dx,
           y: origin.y + dy,
@@ -141,6 +153,7 @@ export class SelectTool extends BaseTool {
     }
 
     if (this.drag.mode === "resize") {
+      // Resize uses the group bounding box and scales each item proportionally.
       const dx = world.x - this.drag.startWorld.x;
       const dy = world.y - this.drag.startWorld.y;
       let nextX = this.drag.originBounds.x;
@@ -212,6 +225,7 @@ export class SelectTool extends BaseTool {
         .map((candidate) => candidate.id)
         .filter((id) => !this.ctx.isLockedByOther(id));
 
+      // Replace selection with whatever the box intersects.
       this.ctx.setSelectedIds(hits);
       this.selectionBox = null;
       this.ctx.invalidate();
@@ -239,6 +253,7 @@ export class SelectTool extends BaseTool {
     }
 
     const selection = this.ctx.getSelectedIds();
+    // If multiple items are selected, render a single group box with resize handles.
     if (selection.length > 1) {
       const selectedItems = this.ctx.getItems().filter((item) => selection.includes(item.id));
       const bounds = getBoundsForItems(selectedItems);
@@ -256,7 +271,7 @@ export class SelectTool extends BaseTool {
               if (event.button !== 0) return;
               event.stopPropagation();
               const world = this.ctx.toWorld(event.clientX, event.clientY);
-              const origins = new Map<string, { x: number; y: number; width: number; height: number; rotation: number }>();
+              const origins = new Map<string, ItemOrigin>();
               selectedItems.forEach((item) => {
                 origins.set(item.id, {
                   x: item.x,
@@ -297,7 +312,7 @@ export class SelectTool extends BaseTool {
     if (event.button !== 0) return;
     event.stopPropagation();
     const world = this.ctx.toWorld(event.clientX, event.clientY);
-    const origins = new Map<string, { x: number; y: number; width: number; height: number; rotation: number }>();
+    const origins = new Map<string, ItemOrigin>();
     selectedItems.forEach((item) => {
       origins.set(item.id, {
         x: item.x,

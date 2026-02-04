@@ -9,6 +9,7 @@ export function useItemLocks(boardId: string, userId: string) {
     let mounted = true;
 
     const loadLocks = async () => {
+      // Load existing locks for this board (joins items to filter by board_id).
       const { data, error } = await supabase
         .from("item_locks")
         .select("item_id,user_id,locked_at,expires_at,items!inner(board_id)")
@@ -26,6 +27,7 @@ export function useItemLocks(boardId: string, userId: string) {
 
     void loadLocks();
 
+    // Realtime updates for locks (currently not filtered by board_id).
     const channel = supabase
       .channel(`locks:${boardId}`)
       .on(
@@ -57,6 +59,7 @@ export function useItemLocks(boardId: string, userId: string) {
   }, [boardId]);
 
   const lockItem = async (itemId: string) => {
+    // MVP: locks do not expire; see TODO_WORKAROUNDS.md.
     const now = new Date().toISOString();
     await supabase.from("item_locks").upsert({
       item_id: itemId,

@@ -5,6 +5,8 @@ import { BoardsPage } from "./pages/Boards";
 import { BoardPage } from "./pages/Board";
 import { PublicBoardPage } from "./pages/PublicBoard";
 
+// GitHub Pages projects need a base path and a 404 redirect shim.
+// This helper extracts /public/:slug both from direct routes and from ?p= fallback.
 function getPublicSlugFromLocation(): { slug: string | null; canonicalUrl: string | null } {
   const base = import.meta.env.BASE_URL ?? "/";
   const stripBase = (path: string) => {
@@ -50,6 +52,7 @@ export default function App() {
 
   useEffect(() => {
     if (initialRoute.canonicalUrl) {
+      // Normalize the URL after a 404 redirect so we land on /public/:slug.
       window.history.replaceState({}, "", initialRoute.canonicalUrl);
     }
   }, [initialRoute.canonicalUrl]);

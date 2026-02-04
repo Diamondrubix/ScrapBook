@@ -16,6 +16,7 @@ type BoardPageProps = {
 };
 
 function makeSlug() {
+  // Short public slug for shareable URLs.
   return crypto.randomUUID().replace(/-/g, "").slice(0, 10);
 }
 
@@ -34,11 +35,13 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
   const { lockItem, unlockItem, isLockedByOther } = useItemLocks(board.id, user.id);
 
   const basePosition = () => {
+    // Offset new items so they do not stack perfectly on top of each other.
     const offset = items.length * 20;
     return { x: 50 + offset, y: 50 + offset };
   };
 
   const handleSelectIds = async (nextIds: string[]) => {
+    // Lock selected items so other editors cannot move them simultaneously.
     const prev = new Set(selectedIds);
     const next = new Set(nextIds);
 
@@ -81,6 +84,7 @@ export function BoardPage({ board, user, onBack }: BoardPageProps) {
 
   const uploadFile = async (file: File) => {
     setUiError(null);
+    // Store uploads under a board-specific prefix.
     const filePath = `boards/${board.id}/${crypto.randomUUID()}-${file.name}`;
     const { error: uploadError } = await supabase.storage.from("board-media").upload(filePath, file, {
       upsert: true,

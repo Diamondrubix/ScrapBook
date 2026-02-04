@@ -21,6 +21,7 @@ export function useRealtimeBoard(boardId: string, userId: string) {
     if (!boardId) return;
     let mounted = true;
     const load = async () => {
+      // Initial snapshot for this board.
       const { data, error: loadError } = await supabase
         .from("items")
         .select("*")
@@ -35,6 +36,7 @@ export function useRealtimeBoard(boardId: string, userId: string) {
     };
     void load();
 
+    // Realtime: keep local state in sync with Postgres changes.
     const channel = supabase
       .channel(`board:${boardId}`)
       .on(
@@ -68,6 +70,7 @@ export function useRealtimeBoard(boardId: string, userId: string) {
   }, [boardId]);
 
   const createItem = async (args: CreateItemArgs) => {
+    // Client-side item creation is optimistic for snappy UX.
     const now = new Date().toISOString();
     const maxZ = items.reduce((acc, item) => Math.max(acc, item.z_index), 0);
     const item: Item = {
@@ -92,6 +95,7 @@ export function useRealtimeBoard(boardId: string, userId: string) {
   };
 
   const updateItem = async (itemId: string, patch: Partial<Item>) => {
+    // Optimistically update local state; realtime will reconcile.
     setItems((prev) =>
       prev.map((item) => (item.id === itemId ? { ...item, ...patch } : item)),
     );

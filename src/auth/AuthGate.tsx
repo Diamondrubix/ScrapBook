@@ -16,7 +16,7 @@ export function AuthGate({ children }: AuthGateProps) {
   useEffect(() => {
     let mounted = true;
     const boot = async () => {
-      // Handle PKCE magic-link callbacks
+      // Handle PKCE magic-link callbacks (Supabase adds ?code= to the URL).
       if (window.location.search.includes("code=")) {
         await supabase.auth.exchangeCodeForSession(window.location.href);
       }
@@ -44,6 +44,7 @@ export function AuthGate({ children }: AuthGateProps) {
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
+        // Use BASE_URL so GitHub Pages project paths still work.
         emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
       },
     });

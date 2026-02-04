@@ -75,6 +75,7 @@ function CanvasItemContent({ item, onUpdateItem }: CanvasItemContentProps) {
       const text = (item.data.text as string) ?? "Double click to edit";
       return (
         <div
+          // Simple inline editing for text items.
           contentEditable
           suppressContentEditableWarning
           style={{ width: "100%", height: "100%", outline: "none" }}

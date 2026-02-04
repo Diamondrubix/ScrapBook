@@ -79,6 +79,7 @@ export function BoardCanvas({
     toolsRef.current[tool].reset();
   }, [tool]);
 
+  // Convert from client pixels into world coordinates (items are stored in world space).
   const toWorld = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
@@ -88,6 +89,7 @@ export function BoardCanvas({
     };
   };
 
+  // Throttle writes to reduce DB chatter while dragging.
   const updateItemThrottled = useMemo(
     () =>
       throttle((itemId: string, patch: Partial<Item>) => {
@@ -137,6 +139,7 @@ export function BoardCanvas({
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (readOnly) {
+      // Public view: only allow right-click panning.
       if (event.button === 2) {
         panRef.current = {
           startClient: { x: event.clientX, y: event.clientY },
@@ -164,6 +167,7 @@ export function BoardCanvas({
       return;
     }
     const world = toWorld(event.clientX, event.clientY);
+    // Live cursor updates are in world space.
     onCursorMove(world);
     activeTool.onPointerMove(event);
   };

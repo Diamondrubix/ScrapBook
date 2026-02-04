@@ -13,6 +13,7 @@ export type PresenceUser = {
 const COLORS = ["#e63946", "#2a9d8f", "#457b9d", "#f4a261", "#6d6875", "#1d3557"];
 
 function pickColor(id: string) {
+  // Deterministic color per user id to keep cursors consistent.
   let hash = 0;
   for (let i = 0; i < id.length; i += 1) {
     hash = (hash * 31 + id.charCodeAt(i)) % COLORS.length;
@@ -63,6 +64,7 @@ export function usePresence(boardId: string, user: User) {
 
   const updateCursor = useMemo(() => {
     return throttle((cursor: { x: number; y: number }) => {
+      // Presence is "best effort" and intentionally throttled.
       channelRef.current?.track({ ...basePayload, cursor });
     }, 40);
   }, [basePayload]);

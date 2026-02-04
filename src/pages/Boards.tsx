@@ -39,6 +39,7 @@ export function BoardsPage({ user, onOpenBoard }: BoardsPageProps) {
     setError(null);
     if (!title.trim()) return;
 
+    // RPC avoids RLS recursion when creating a board + membership in one transaction.
     const { data: board, error: createError } = await supabase
       .rpc("create_board", { p_title: title.trim() })
       .single();
