@@ -39,6 +39,7 @@ type BoardCanvasProps = {
     width: number;
     height: number;
   }) => void;
+  readOnly?: boolean;
 };
 
 export function BoardCanvas({
@@ -55,10 +56,14 @@ export function BoardCanvas({
   onToolChange,
   onCreateShape,
   onCreateDraw,
+  readOnly = false,
 }: BoardCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [view, setView] = useState<ViewState>({ x: 100, y: 80, scale: 1 });
   const [, forceRender] = useReducer((value) => value + 1, 0);
+  const panRef = useRef<{ startClient: { x: number; y: number }; startView: ViewState } | null>(
+    null,
+  );
 
   // Tool instances persist across renders to keep in-progress state.
   const toolsRef = useRef({
@@ -131,6 +136,15 @@ export function BoardCanvas({
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (readOnly) {
+      if (event.button === 2) {
+        panRef.current = {
+          startClient: { x: event.clientX, y: event.clientY },
+          startView: view,
+        };
+      }
+      return;
+    }
     const target = event.target as HTMLElement | null;
     const hitItem = target?.closest("[data-item-id]");
     // Selection uses item handlers; other tools draw even over existing items.
@@ -139,16 +153,31 @@ export function BoardCanvas({
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (readOnly && panRef.current) {
+      const dx = event.clientX - panRef.current.startClient.x;
+      const dy = event.clientY - panRef.current.startClient.y;
+      setView({
+        x: panRef.current.startView.x + dx,
+        y: panRef.current.startView.y + dy,
+        scale: panRef.current.startView.scale,
+      });
+      return;
+    }
     const world = toWorld(event.clientX, event.clientY);
     onCursorMove(world);
     activeTool.onPointerMove(event);
   };
 
   const handlePointerUp = () => {
+    if (readOnly) {
+      panRef.current = null;
+      return;
+    }
     activeTool.onPointerUp();
   };
 
   useEffect(() => {
+    if (readOnly) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (selectedIds.length === 0) return;
       if (event.key !== "Delete" && event.key !== "Backspace") return;
