@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shared Scrapbook</title>
+    <script>
+      // GitHub Pages SPA fallback: redirect all 404s to index.html
+      // while preserving the full path and query string.
+      (function () {
+        var base = window.location.pathname.split("/").slice(0, -1).join("/") + "/";
+        var redirect = base + "?p=" + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+        window.location.replace(redirect);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
