@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import type { Board } from "../lib/types";
+import trashIcon from "../icons/trash.png";
 
 type BoardsPageProps = {
   user: User;
@@ -57,6 +58,29 @@ export function BoardsPage({ user, onOpenBoard }: BoardsPageProps) {
     await supabase.auth.signOut();
   };
 
+  const deleteBoard = async (board: Board) => {
+    setError(null);
+    if (
+      !window.confirm(
+        `Delete "${board.title}" and all of its data? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    const { error: deleteError } = await supabase
+      .from("boards")
+      .delete()
+      .eq("id", board.id);
+
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+
+    setBoards((prev) => prev.filter((entry) => entry.id !== board.id));
+  };
+
   return (
     <div className="page stack">
       <div className="row" style={{ justifyContent: "space-between" }}>
@@ -84,7 +108,22 @@ export function BoardsPage({ user, onOpenBoard }: BoardsPageProps) {
       <div className="board-list">
         {boards.map((board) => (
           <div key={board.id} className="card stack">
-            <strong>{board.title}</strong>
+            <div className="board-card__header">
+              <strong className="board-card__title">{board.title}</strong>
+              <button
+                className="icon-button"
+                onClick={() => deleteBoard(board)}
+                aria-label={`Delete ${board.title}`}
+                title={
+                  board.owner_id === user.id
+                    ? "Delete board"
+                    : "Only the owner can delete this board"
+                }
+                disabled={board.owner_id !== user.id}
+              >
+                <img src={trashIcon} alt="" />
+              </button>
+            </div>
             <button className="button" onClick={() => onOpenBoard(board)}>
               Open board
             </button>
